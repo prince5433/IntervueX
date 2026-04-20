@@ -32,7 +32,32 @@ export function FeedbackModal({
   feedback,
   intervieweeName,
 }) {
-  if (!feedback) return null;
+  // No-feedback case — modal abhi bhi open ho sakta hai taaki user ko explicit
+  // "still generating" state dikhaayi de, silent no-op ki jagah.
+  if (!feedback) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="bg-black border border-amber-200/20 text-stone-100 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl tracking-tight">
+              <GrayTitle>AI Feedback Report</GrayTitle>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center text-center gap-3 py-6">
+            <Sparkles size={28} className="text-amber-400" />
+            <p className="text-sm text-stone-300">
+              Feedback is still being generated.
+            </p>
+            <p className="text-xs text-stone-500 font-light max-w-sm">
+              The AI report appears shortly after the recording finishes
+              processing. If it&apos;s been a while, an admin can regenerate it
+              using the backfill script.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const rating = RATING_CONFIG[feedback.overallRating];
   return (

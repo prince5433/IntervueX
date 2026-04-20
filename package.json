@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "postinstall": "prisma generate",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backfill-feedback": "tsx scripts/backfill-feedback.js"
   },
   "dependencies": {
     "@arcjet/next": "^1.3.0",
     "@clerk/nextjs": "^6.39.0",
     "@clerk/themes": "^2.4.57",
+    "@deepgram/sdk": "^5.0.0",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",

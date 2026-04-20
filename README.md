@@ -109,6 +109,9 @@ STREAM_SECRET_KEY=your_stream_secret
 # ─── GOOGLE GEMINI (AI Feedback & Questions) ────────────────
 GEMINI_API_KEY=your_gemini_api_key
 
+# ─── DEEPGRAM (Post-call transcription, faster than Stream) ─
+DEEPGRAM_API_KEY=your_deepgram_api_key
+
 # ─── ARCJET (Rate Limiting & Bot Protection) ────────────────
 ARCJET_KEY=ajkey_...
 
@@ -258,6 +261,7 @@ ai-interview-platform/
 | `NEXT_PUBLIC_STREAM_API_KEY` | ✅ | **Stream** → [Dashboard](https://dashboard.getstream.io/) → Your App → API Key |
 | `STREAM_SECRET_KEY` | ✅ | **Stream** → Same page → Secret |
 | `GEMINI_API_KEY` | ✅ | **Google AI Studio** → [Create API Key](https://aistudio.google.com/apikey) |
+| `DEEPGRAM_API_KEY` | ✅ | **Deepgram** → [Console](https://console.deepgram.com/) → API Keys → Create |
 | `ARCJET_KEY` | ✅ | **Arcjet** → [Dashboard](https://app.arcjet.com/) → Site → Settings → API Key |
 | `RESEND_API_KEY` | ✅ | **Resend** → [Dashboard](https://resend.com/api-keys) → API Keys → Create |
 | `NEXT_PUBLIC_APP_URL` | ✅ | Your deployed URL (use `http://localhost:3000` for local dev) |

@@ -170,7 +170,7 @@ export function AppointmentCard({ booking, mode, isPast = false }) {
           </div>
         )}
 
-        {(streamCallId || recordingUrl || feedback) && (
+        {(streamCallId || recordingUrl || feedback || isPast) && (
           <div className="flex items-center gap-2 flex-wrap pt-1">
             {!isPast && streamCallId && isUpcoming && (
               // Note: join button sirf upcoming scheduled sessions me dikhana chahiye.
@@ -206,27 +206,28 @@ export function AppointmentCard({ booking, mode, isPast = false }) {
               </Button>
             )}
 
-            {feedback &&
-              (has?.({ plan: "starter" }) || has?.({ plan: "pro" })) && (
-                // Note: detailed feedback paid tiers (starter/pro) ko hi show karte hain.
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 border-amber-400/20 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/40"
-                    onClick={() => setFeedbackOpen(true)}
-                  >
-                    <Sparkles size={12} />
-                    Full Feedback
-                  </Button>
-                  <Badge
-                    variant="outline"
-                    className={RATING_STYLES[feedback.overallRating]}
-                  >
-                    ✦ {RATING_LABEL[feedback.overallRating]} performance
-                  </Badge>
-                </>
-              )}
+            {isPast && (
+              // Note: feedback button har past card pe dikhayi deta hai; modal khud
+              // handle karta hai agar feedback abhi tak generate nahi hua.
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-amber-400/20 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/40"
+                onClick={() => setFeedbackOpen(true)}
+              >
+                <Sparkles size={12} />
+                {feedback ? "Full Feedback" : "Feedback"}
+              </Button>
+            )}
+
+            {feedback && (
+              <Badge
+                variant="outline"
+                className={RATING_STYLES[feedback.overallRating]}
+              >
+                ✦ {RATING_LABEL[feedback.overallRating]} performance
+              </Badge>
+            )}
           </div>
         )}
       </article>
