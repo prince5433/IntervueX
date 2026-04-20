@@ -48,12 +48,12 @@ export function AppointmentCard({ booking, mode, isPast = false }) {
   const isUpcoming = status === "SCHEDULED";
   const isProUser = Boolean(has?.({ plan: "pro" }));
   const canOpenRecording =
-    mode === "interviewee" && isProUser && Boolean(streamCallId);
+    mode === "interviewee" && isProUser && isPast && Boolean(streamCallId);
   const recordingHref = streamCallId
     ? `/api/recordings/${streamCallId}`
     : recordingUrl;
   const showRecordingPlaceholder =
-    mode === "interviewee" && isProUser && !streamCallId;
+    mode === "interviewee" && isProUser && isPast && !streamCallId;
   return (
     <>
       <FeedbackModal

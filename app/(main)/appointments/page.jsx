@@ -14,7 +14,16 @@ import PageHeader from "@/components/reusables";
 import { Button } from "@/components/ui/button";
 import { CalendarDays } from "lucide-react";
 
-export default async function MyAppointmentsPage() {
+const RECORDING_STATUS_MESSAGES = {
+  processing:
+    "Recording isn't ready yet. Stream is still processing it — check again in a few minutes.",
+  "booking-not-found": "We couldn't find that booking.",
+  "missing-call-id": "That session doesn't have a recording linked.",
+  "upgrade-required":
+    "Recordings are a Pro plan feature. Upgrade to access session replays.",
+};
+
+export default async function MyAppointmentsPage({ searchParams }) {
   const { userId } = await auth();
   if (!userId) redirect("/");
 
@@ -26,6 +35,13 @@ export default async function MyAppointmentsPage() {
   const past = appointments.filter(
     (a) => a.status !== "SCHEDULED" || new Date(a.endTime) <= now
   );
+
+  const recordingStatus = (await searchParams)?.recording;
+  const recordingMessage =
+    typeof recordingStatus === "string"
+      ? RECORDING_STATUS_MESSAGES[recordingStatus]
+      : null;
+
   return (
     <main className="min-h-screen bg-black">
       {/* ── Page header ── */}
@@ -37,6 +53,12 @@ export default async function MyAppointmentsPage() {
       />
 
       <div className="max-w-6xl mx-auto px-8 lg:px-0 py-8 flex flex-col gap-14">
+        {recordingMessage && (
+          <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-5 py-4 text-sm text-amber-200">
+            {recordingMessage}
+          </div>
+        )}
+
         {/* ── Empty state ── */}
         {appointments.length === 0 && (
           <div className="flex flex-col items-center justify-center py-28 gap-5 text-center">
@@ -73,7 +95,6 @@ export default async function MyAppointmentsPage() {
             </div>
           </div>
         )}
-
         {/* ── Past ── */}
         {past.length > 0 && (
           <div className="flex flex-col gap-5">

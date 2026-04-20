@@ -94,7 +94,11 @@ export async function GET(request, { params }) {
       );
 
       const call = streamClient.video.call("default", callId);
-      const recordingsResp = await call.queryRecordings();
+      const recordingsResp = await call.listRecordings();
+      console.log(
+        `[recordings] callId=${callId} queryRecordings response:`,
+        JSON.stringify(recordingsResp, null, 2)
+      );
       const latestRecording = recordingsResp?.recordings?.[0];
       const freshUrl =
         pickFirstUrl(latestRecording) ||
@@ -102,19 +106,21 @@ export async function GET(request, { params }) {
         pickFirstUrl(recordingsResp?.recordings?.[1]);
 
       if (freshUrl) {
-        // Cache discovered URL so future clicks work even if Stream API is flaky.
+        console.log(`[recordings] callId=${callId} resolved url=${freshUrl}`);
         await db.booking.update({
           where: { id: booking.id },
           data: { recordingUrl: freshUrl },
         });
         return NextResponse.redirect(freshUrl);
       }
+      console.log(
+        `[recordings] callId=${callId} no playable URL extracted from response`
+      );
     } catch (streamErr) {
       const streamMessage =
         streamErr instanceof Error ? streamErr.message : String(streamErr);
-      console.error("recordings route stream query error:", streamMessage);
+      console.error(`[recordings] callId=${callId} stream query error:`, streamMessage);
     }
-
     return redirectToAppointments("processing");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
