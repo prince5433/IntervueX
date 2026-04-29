@@ -23,7 +23,7 @@ import {
   generateSlots,
 } from "@/lib/helpers";
 
-const SLOT_DURATION_MINUTES = 45;
+const SLOT_DURATION_MINUTES = 2;
 const DAYS_AHEAD = 7;
 
 export default function SlotPicker({
