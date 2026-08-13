@@ -35,7 +35,25 @@ export const completeOnboarding = async (data) => {
   }
 
   try {
-    // Note: role save karte hain, interviewer ho to extra profile fields bhi persist.
+    // Ensure user exists in database first
+    let dbUser = await db.user.findUnique({ where: { clerkUserId: user.id } });
+    if (!dbUser) {
+      const primaryEmail = user.emailAddresses?.[0]?.emailAddress ?? "";
+      const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User";
+      dbUser = await db.user.create({
+        data: {
+          clerkUserId: user.id,
+          name,
+          email: primaryEmail,
+          imageUrl: user.imageUrl,
+          credits: 1,
+          currentPlan: "free",
+          creditsLastAllocatedAt: new Date(),
+        },
+      });
+    }
+
+    // Role save karte hain, interviewer ho to extra profile fields bhi persist.
     await db.user.update({
       where: { clerkUserId: user.id },
       data: {
@@ -43,7 +61,7 @@ export const completeOnboarding = async (data) => {
         ...(role === "INTERVIEWER" && {
           title,
           company,
-          yearsExp,
+          yearsExp: Number(yearsExp),
           bio,
           categories,
         }),
