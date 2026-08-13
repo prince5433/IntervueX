@@ -1,58 +1,90 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// ─────────────────────────────────────────────────────────────
+// FILE: prisma/schema.prisma
+// PURPOSE: Database ka complete blueprint — sab tables, columns,
+//          relations aur enums yahan define hote hain.
+//          Prisma CLI isko padh ke migration files banata hai
+//          aur type-safe client generate karta hai.
+// ─────────────────────────────────────────────────────────────
 
+// generator block: Prisma client kaise aur kahan generate hoga yeh batata hai.
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider = "prisma-client"           // naya Prisma v6 standalone client use hoga
+  output   = "../lib/generated/prisma" // generated files yahan aayengi (gitignored)
 }
 
+// datasource block: database engine aur connection string define karta hai.
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // PostgreSQL use ho raha hai (Neon hosted)
+  // Note: connectionString runtime pe process.env.DATABASE_URL se aati hai,
+  // schema me hardcode nahi hoti (security best practice).
 }
 
-// ─── ENUMS ───────────────────────────────────────────────
+// ─── ENUMS ───────────────────────────────────────────────────────────────────
+// Enums fixed string sets hain — DB me invalid values store nahi ho sakti.
 
+// UserRole: user ka account type define karta hai.
+// UNASSIGNED = naya user jo abhi onboarding complete nahi kiya.
+// INTERVIEWEE = jo mock interview book karta hai.
+// INTERVIEWER = jo sessions conduct karta hai aur earning karta hai.
 enum UserRole {
-  UNASSIGNED
-  INTERVIEWEE
-  INTERVIEWER
+  UNASSIGNED  // default state: role not yet chosen
+  INTERVIEWEE // candidate side
+  INTERVIEWER // expert side
 }
 
+// BookingStatus: ek booking ka lifecycle state.
+// SCHEDULED  = slot book hua, call abhi hona baaki hai.
+// COMPLETED  = call ho gaya aur feedback generate ho gaya.
+// CANCELLED  = booking cancel ho gayi (refund/no-show scenario).
 enum BookingStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
 }
 
+// AvailabilityStatus: interviewer ki availability window ka state.
+// AVAILABLE = open slot, koi book kar sakta hai.
+// BOOKED    = already koi booking ho gayi is window me.
+// BLOCKED   = manually blocked (vacation/break).
 enum AvailabilityStatus {
   AVAILABLE
   BOOKED
   BLOCKED
 }
 
+// PayoutStatus: withdrawal request ka processing state.
+// PROCESSING = admin ne abhi process nahi kiya.
+// PROCESSED  = payout complete, amount transfer ho gaya.
 enum PayoutStatus {
   PROCESSING
   PROCESSED
 }
 
+// InterviewCategory: interviewer ke expertise domains aur AI question generator ke liye categories.
 enum InterviewCategory {
-  FRONTEND
-  BACKEND
-  FULLSTACK
-  DSA
-  SYSTEM_DESIGN
-  BEHAVIORAL
-  DEVOPS
-  MOBILE
+  FRONTEND      // React, CSS, browser APIs
+  BACKEND       // Node.js, REST, databases
+  FULLSTACK     // end-to-end web development
+  DSA           // data structures and algorithms
+  SYSTEM_DESIGN // scalability, distributed systems
+  BEHAVIORAL    // STAR method, soft skills
+  DEVOPS        // CI/CD, Docker, Kubernetes
+  MOBILE        // React Native, iOS/Android
 }
 
+// FeedbackRating: Gemini AI ka candidate performance summary rating.
 enum FeedbackRating {
-  POOR
-  AVERAGE
-  GOOD
-  EXCELLENT
+  POOR      // significant gaps found
+  AVERAGE   // some areas need improvement
+  GOOD      // solid performance
+  EXCELLENT // ready for production interview
 }
 
+// TransactionType: credit ledger me entry kis wajah se bani yeh batata hai.
+// CREDIT_PURCHASE  = user ne plan subscribe kiya (Stripe/billing se).
+// BOOKING_DEDUCTION = interviewee ke wallet se session ke liye credits kate.
+// BOOKING_EARNING  = interviewer ko session complete hone pe credits mile.
+// ADMIN_ADJUSTMENT = admin manually balance adjust kare (refund/correction).
 enum TransactionType {
   CREDIT_PURCHASE
   BOOKING_DEDUCTION
@@ -60,126 +92,140 @@ enum TransactionType {
   ADMIN_ADJUSTMENT
 }
 
-// ─── USER ────────────────────────────────────────────────
+// ─── USER MODEL ──────────────────────────────────────────────────────────────
+// Dono roles (interviewer + interviewee) ek hi User table me store hote hain.
+// Role-specific fields null rahenge agar us role ki zaroorat na ho.
 
 model User {
-  id          String   @id @default(uuid())
-  clerkUserId String   @unique
-  email       String   @unique
-  name        String?
-  imageUrl    String?
-  role        UserRole @default(UNASSIGNED)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String   @id @default(uuid())       // primary key — UUID v4 auto-generated
+  clerkUserId String   @unique                     // Clerk auth system ka user ID (foreign identity)
+  email       String   @unique                     // login email, must be unique
+  name        String?                              // display name (nullable — set on first login)
+  imageUrl    String?                              // avatar URL from Clerk OAuth
+  role        UserRole @default(UNASSIGNED)        // starts UNASSIGNED until onboarding done
+  createdAt   DateTime @default(now())             // account creation timestamp
+  updatedAt   DateTime @updatedAt                  // auto-updated on any change
 
-  // interviewee-only
-  credits                Int       @default(0)
-  currentPlan            String    @default("free")
-  creditsLastAllocatedAt DateTime?
+  // ── INTERVIEWEE-ONLY FIELDS ───────────────────────────────────────────────
+  credits                Int       @default(0)     // current spendable credit balance
+  currentPlan            String    @default("free") // "free" | "starter" | "pro" — Clerk plan
+  creditsLastAllocatedAt DateTime?                 // last monthly credit allocation date (for rollover logic)
 
-  // interviewer-only
-  bio           String?
-  title         String?
-  company       String?
-  yearsExp      Int?
-  categories    InterviewCategory[]
-  creditRate    Int                 @default(1)
-  creditBalance Int                 @default(0)
+  // ── INTERVIEWER-ONLY FIELDS ───────────────────────────────────────────────
+  bio           String?                            // short bio shown on explore page
+  title         String?                            // e.g. "Senior SDE @ Google"
+  company       String?                            // current employer
+  yearsExp      Int?                               // years of professional experience
+  categories    InterviewCategory[]               // areas of expertise (multi-select)
+  creditRate    Int                 @default(1)   // credits charged per session (set by admin/default)
+  creditBalance Int                 @default(0)   // earned credits waiting for withdrawal
 
-  availabilities        Availability[]
-  bookingsAsInterviewee Booking[]           @relation("IntervieweeBookings")
-  bookingsAsInterviewer Booking[]           @relation("InterviewerBookings")
-  transactions          CreditTransaction[]
-  payouts               Payout[]
+  // ── RELATIONS ────────────────────────────────────────────────────────────
+  availabilities        Availability[]            // interviewer's open time windows
+  bookingsAsInterviewee Booking[]           @relation("IntervieweeBookings") // sessions booked by this user
+  bookingsAsInterviewer Booking[]           @relation("InterviewerBookings") // sessions conducted by this user
+  transactions          CreditTransaction[]       // full credit ledger history
+  payouts               Payout[]                6  // withdrawal requests made by interviewer
 }
 
-// ─── AVAILABILITY ────────────────────────────────────────
+// ─── AVAILABILITY MODEL ──────────────────────────────────────────────────────
+// Interviewer apni ek daily time window set karta hai.
+// Frontend isko fixed-duration slots me split karke dikhata hai.
 
 model Availability {
-  id            String             @id @default(uuid())
-  interviewerId String
+  id            String             @id @default(uuid())      // unique row ID
+  interviewerId String                                        // FK → User
   interviewer   User               @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
-  startTime     DateTime
-  endTime       DateTime
-  status        AvailabilityStatus @default(AVAILABLE)
+                                                             // interviewer delete hone pe availability bhi delete
+  startTime     DateTime                                      // window start (e.g. 9:00 AM)
+  endTime       DateTime                                      // window end (e.g. 5:00 PM)
+  status        AvailabilityStatus @default(AVAILABLE)        // current state of this window
 
-  @@index([interviewerId, startTime])
+  @@index([interviewerId, startTime]) // fast lookup: "is this interviewer available on this date?"
 }
 
-// ─── BOOKINGS ────────────────────────────────────────────
+// ─── BOOKING MODEL ───────────────────────────────────────────────────────────
+// Ek booked session represent karta hai — har booking ek Stream video call se linked hai.
 
 model Booking {
-  id             String        @id @default(uuid())
-  intervieweeId  String
+  id             String        @id @default(uuid())       // unique booking ID
+  intervieweeId  String                                    // FK → User (candidate)
   interviewee    User          @relation("IntervieweeBookings", fields: [intervieweeId], references: [id])
-  interviewerId  String
+  interviewerId  String                                    // FK → User (expert)
   interviewer    User          @relation("InterviewerBookings", fields: [interviewerId], references: [id])
-  startTime      DateTime
-  endTime        DateTime
-  status         BookingStatus @default(SCHEDULED)
-  creditsCharged Int
-  streamCallId   String?       @unique
-  recordingUrl   String?
-  feedback       Feedback?
-  transactions   CreditTransaction[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  startTime      DateTime                                  // session start UTC timestamp
+  endTime        DateTime                                  // session end UTC timestamp
+  status         BookingStatus @default(SCHEDULED)         // lifecycle state
+  creditsCharged Int                                       // credits deducted at booking time (snapshot)
+  streamCallId   String?       @unique                     // Stream.io call ID — unique per session
+  recordingUrl   String?                                   // cloud recording URL (set by webhook after call ends)
+  feedback       Feedback?                                 // 1-to-1 relation: AI feedback generated post-call
+  transactions   CreditTransaction[]                       // credit movements tied to this booking
+  createdAt      DateTime      @default(now())             // booking creation time
+  updatedAt      DateTime      @updatedAt                  // last update time
 
-  @@index([status, createdAt])
-  @@index([interviewerId, status])
-  @@index([intervieweeId, status])
+  // Compound indexes for common dashboard/analytics queries
+  @@index([status, createdAt])         // "recent completed bookings" query
+  @@index([interviewerId, status])     // "interviewer's scheduled sessions"
+  @@index([intervieweeId, status])     // "interviewee's appointments"
 }
 
-// ─── FEEDBACK ────────────────────────────────────────────
+// ─── FEEDBACK MODEL ──────────────────────────────────────────────────────────
+// Gemini AI-generated post-call analysis — 1:1 with Booking.
+// Sirf COMPLETED bookings ke liye exist karta hai.
 
 model Feedback {
-  id             String         @id @default(uuid())
-  bookingId      String         @unique
+  id             String         @id @default(uuid())     // unique feedback ID
+  bookingId      String         @unique                   // FK → Booking (one feedback per session)
   booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  summary        String         @db.Text
-  technical      String         @db.Text
-  communication  String         @db.Text
-  problemSolving String         @db.Text
-  recommendation String
-  strengths      String[]
-  improvements   String[]
-  overallRating  FeedbackRating
-  sessionRating  Int?
-  sessionComment String?        @db.Text
-  createdAt      DateTime       @default(now())
+                                                         // booking delete hone pe feedback bhi delete
+  summary        String         @db.Text                 // 2-3 sentence overall session summary
+  technical      String         @db.Text                 // technical knowledge assessment
+  communication  String         @db.Text                 // clarity and communication style assessment
+  problemSolving String         @db.Text                 // problem-solving approach assessment
+  recommendation String                                   // "HIRE" | "CONSIDER" | "NO_HIRE" with reason
+  strengths      String[]                                 // list of candidate strengths
+  improvements   String[]                                 // list of areas to improve
+  overallRating  FeedbackRating                           // POOR | AVERAGE | GOOD | EXCELLENT
+  sessionRating  Int?                                     // optional 1-5 star rating by candidate (future feature)
+  sessionComment String?        @db.Text                 // optional written comment by candidate
+  createdAt      DateTime       @default(now())           // when feedback was generated
 }
 
-// ─── CREDIT TRANSACTIONS ─────────────────────────────────
+// ─── CREDIT TRANSACTION MODEL ────────────────────────────────────────────────
+// Har credit movement ka immutable audit log — wallet history aur analytics ke liye.
 
 model CreditTransaction {
-  id        String          @id @default(uuid())
-  userId    String
+  id        String          @id @default(uuid())         // unique transaction row
+  userId    String                                        // FK → User (whose wallet changed)
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount    Int
-  type      TransactionType
-  bookingId String?
+  amount    Int                                           // positive = credit in, negative = deduction
+  type      TransactionType                               // reason for this movement
+  bookingId String?                                       // optional FK → Booking (for session-linked transactions)
   booking   Booking?        @relation(fields: [bookingId], references: [id])
-  createdAt DateTime        @default(now())
+  createdAt DateTime        @default(now())               // immutable audit timestamp
 }
 
-// ─── PAYOUTS ─────────────────────────────────────────────
+// ─── PAYOUT MODEL ────────────────────────────────────────────────────────────
+// Interviewer withdrawal request — admin manually approves and marks PROCESSED.
 
 model Payout {
-  id            String       @id @default(uuid())
-  interviewerId String
+  id            String       @id @default(uuid())        // unique payout ID
+  interviewerId String                                    // FK → User (interviewer requesting payout)
   interviewer   User         @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
-  credits       Int
-  platformFee   Float
-  netAmount     Float
-  paymentMethod String
-  paymentDetail String
-  status        PayoutStatus @default(PROCESSING)
-  adminNote     String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  processedAt   DateTime?
-  processedBy   String?
+  credits       Int                                       // how many credits are being withdrawn
+  platformFee   Float                                     // 20% platform cut in dollars
+  netAmount     Float                                     // amount interviewer actually receives (credits * 0.8 * $5)
+  paymentMethod String                                    // "UPI" | "Bank Transfer" | "PayPal" etc.
+  paymentDetail String                                    // UPI ID / account number / PayPal email
+  status        PayoutStatus @default(PROCESSING)         // PROCESSING until admin acts
+  adminNote     String?                                   // optional admin comment on this payout
+  createdAt     DateTime     @default(now())              // request submission time
+  updatedAt     DateTime     @updatedAt                   // last status change time
+  processedAt   DateTime?                                 // when admin marked it PROCESSED
+  processedBy   String?                                   // admin user ID who processed it
 
-  @@index([status, createdAt])
-  @@index([interviewerId, status])
+  // Indexes for admin payout dashboard
+  @@index([status, createdAt])         // "all pending payouts sorted by date"
+  @@index([interviewerId, status])     // "interviewer's payout history"
 }

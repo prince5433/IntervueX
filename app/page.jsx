@@ -5,31 +5,31 @@
  * Trigger: User root URL open kare to yeh page render hota hai.
  * File Path: app/page.jsx
  */
-import { CodeDemo } from "@/components/demo-components-animate-code";
-import { StarsBackgroundDemo } from "@/components/demo-components-backgrounds-stars";
-import { AI_TAGS, AVATARS, LOGOS, ROLES, SLOTS } from "@/lib/data";
+import { CodeDemo } from "@/components/demo-components-animate-code"; // code sample/demo
+import { StarsBackgroundDemo } from "@/components/demo-components-backgrounds-stars"; // animated bg
+import { AI_TAGS, AVATARS, LOGOS, ROLES, SLOTS } from "@/lib/data"; // static page data
 import {
   GoldTitle,
   GrayTitle,
   SectionHeading,
   SectionLabel,
-} from "@/components/reusables";
-import { Bot, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
-import Link from "next/link";
-import PricingSection from "@/components/PricingSection";
+} from "@/components/reusables"; // shared UI bits
+import { Bot, Wallet } from "lucide-react"; // icons
+import { Button } from "@/components/ui/button"; // button component
+import { Badge } from "@/components/ui/badge"; // small badges
+import Image from "next/image"; // optimized images
+import Link from "next/link"; // client nav
+import PricingSection from "@/components/PricingSection"; // pricing UI
 
-function MockUI({ rows = 3 }) {
-  const widths = ["w-4/5", "w-3/5", "w-2/5", "w-4/5", "w-1/2"];
+function MockUI({ rows = 3 }) { // tiny skeleton/demo UI
+  const widths = ["w-4/5", "w-3/5", "w-2/5", "w-4/5", "w-1/2"]; // varying line widths
   const colors = [
     "bg-white/5",
     "bg-white/5",
     "bg-amber-400/15",
     "bg-white/5",
     "bg-white/5",
-  ];
+  ]; // subtle bg tints
   return (
     <div className="mt-5 rounded-xl bg-[#141417] border border-white/10 overflow-hidden">
       <div className="h-9 bg-white/5 border-b border-white/10 flex items-center px-3.5 gap-1.5">
@@ -49,7 +49,7 @@ function MockUI({ rows = 3 }) {
   );
 }
 
-export function BentoCard({ icon, title, desc, children, className = "" }) {
+export function BentoCard({ icon, title, desc, children, className = "" }) { // reusable feature card
   return (
     <div
       className={`relative bg-[#0f0f11] border border-white/10 hover:border-amber-400/20 rounded-2xl p-9 h-full transition duration-300 overflow-hidden ${className}`}
@@ -69,7 +69,7 @@ export function BentoCard({ icon, title, desc, children, className = "" }) {
   );
 }
 
-export default function LandingPage() {
+export default function LandingPage() { // main landing page component
   return (
     <div className="bg-black overflow-x-hidden">
       {/* HERO */}

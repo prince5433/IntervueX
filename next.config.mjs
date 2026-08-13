@@ -5,16 +5,16 @@
  * Read Order: type hint -> nextConfig object -> export.
  */
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: false,
-  images: {
-    remotePatterns: [
+const nextConfig = { // Next.js config object
+  reactStrictMode: false, // React Strict Mode off (warnings disabled) — set true for stricter checks.
+  images: { // Image optimization & remote image settings
+    remotePatterns: [ // Allowed remote image URL patterns
       {
-        protocol: "https",
-        hostname: "randomuser.me",
+        protocol: "https", // Allowed protocol for remote images
+        hostname: "randomuser.me", // Allowed remote image hostname
       },
     ],
   },
 };
 
-export default nextConfig;
+export default nextConfig; // Export config for Next.js runtime
