@@ -38,10 +38,19 @@ export default clerkMiddleware(async (auth, req) => {
   // Skip Arcjet for trusted webhook routes
   //webhooks basically kya hote hain? Webhooks ek tarah ke HTTP callbacks hote hain jo ek application ko dusre application ko real-time me data push karne ki suvidha dete hain. Jab bhi koi specific event hota hai (jaise ki user registration, payment success, etc.), toh webhook URL par ek HTTP request bheji jati hai jisme event ke details hoti hain. Isse receiving application turant action le sakta hai bina baar-baar API ko poll kiye.
   if (!isWebhookRoute(req)) {
-    // Note: webhook ke alawa sab requests pe Arcjet shield/bot rules enforce hote hain.
-    const decision = await aj.protect(req);
-    if (decision.isDenied()) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (process.env.ARCJET_KEY) {
+      const decision = await aj.protect(req);
+      if (decision.isDenied()) {
+        console.log("Arcjet request denied:", decision.reason);
+        const isVercelPreview = process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV !== "production";
+        if (isVercelPreview && decision.reason.isBot()) {
+          console.log("Bypassing bot block in preview/development environment");
+        } else {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+      }
+    } else {
+      console.log("Arcjet key is missing, skipping protection check");
     }
   }
 
