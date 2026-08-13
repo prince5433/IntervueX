@@ -125,7 +125,7 @@ model User {
   bookingsAsInterviewee Booking[]           @relation("IntervieweeBookings") // sessions booked by this user
   bookingsAsInterviewer Booking[]           @relation("InterviewerBookings") // sessions conducted by this user
   transactions          CreditTransaction[]       // full credit ledger history
-  payouts               Payout[]                6  // withdrawal requests made by interviewer
+  payouts               Payout[]                  // withdrawal requests made by interviewer
 }
 
 // ─── AVAILABILITY MODEL ──────────────────────────────────────────────────────

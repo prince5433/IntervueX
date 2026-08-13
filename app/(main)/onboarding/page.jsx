@@ -32,9 +32,10 @@ export default function OnboardingPage() {
   });
   useEffect(() => {
     if (data && !loading) {
+      router.refresh();
       router.push(role === "INTERVIEWER" ? "/dashboard" : "/explore");
     }
-  }, [data, router]);
+  }, [data, loading, role, router]);
 
   const toggleCategory = (val) => {
     setForm((prev) => ({
