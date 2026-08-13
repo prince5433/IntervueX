@@ -10,8 +10,10 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const INTERVIEWER_ONLY = ["/appointments"];
-const INTERVIEWEE_ONLY = ["/dashboard"];
+// Routes that INTERVIEWER should NOT visit (these are interviewee-only)
+const FORBIDDEN_FOR_INTERVIEWER = ["/appointments"];
+// Routes that INTERVIEWEE should NOT visit (these are interviewer-only)
+const FORBIDDEN_FOR_INTERVIEWEE = ["/dashboard"];
 
 export default function RoleRedirect({ role }) {
   const pathname = usePathname();
@@ -26,12 +28,12 @@ export default function RoleRedirect({ role }) {
       router.replace("/explore");
     if (
       role === "INTERVIEWER" &&
-      INTERVIEWER_ONLY.some((p) => pathname.startsWith(p))
+      FORBIDDEN_FOR_INTERVIEWER.some((p) => pathname.startsWith(p))
     )
       router.replace("/dashboard");
     if (
       role === "INTERVIEWEE" &&
-      INTERVIEWEE_ONLY.some((p) => pathname.startsWith(p))
+      FORBIDDEN_FOR_INTERVIEWEE.some((p) => pathname.startsWith(p))
     )
       router.replace("/appointments");
   }, [role, pathname, router]);

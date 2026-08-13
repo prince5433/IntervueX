@@ -13,6 +13,10 @@ const nextConfig = { // Next.js config object
         protocol: "https", // Allowed protocol for remote images
         hostname: "randomuser.me", // Allowed remote image hostname
       },
+      {
+        protocol: "https",
+        hostname: "img.clerk.com", // Clerk user avatar images
+      },
     ],
   },
 };

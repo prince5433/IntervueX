@@ -55,11 +55,10 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Note: Clerk auth context se userId nikaalte hain.
-  const { userId } = await auth();
+  const { userId, redirectToSignIn } = await auth();
 
   // Note: protected route par unauthenticated user ko Clerk sign-in flow me redirect.
   if (!userId && isProtectedRoute(req)) {
-    const { redirectToSignIn } = await auth();
     return redirectToSignIn();
   }
 

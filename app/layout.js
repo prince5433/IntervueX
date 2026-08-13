@@ -67,7 +67,7 @@ const dmSans = DM_Sans({
 // Yeh global default hai; individual pages apna metadata override kar sakte hain.
 export const metadata = {
   title: "IntervueX",          // browser tab aur SEO title
-  description: "",             // TODO: add SEO description for better search ranking
+  description: "Practice mock interviews with real industry experts. Get AI-powered feedback, HD video calls, and personalized coaching to land your dream tech role.",
 };
 
 // ── ROOT LAYOUT COMPONENT ─────────────────────────────────────────────────────

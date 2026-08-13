@@ -137,22 +137,11 @@ export const bookSlot = async ({ interviewerId, startTime, endTime }) => {
   if (dbUser.credits < credits)
     throw new Error("Insufficient credits. Please upgrade your plan.");
 
-  // ── Step 5: Conflict Detection ────────────────────────────────────────────
-  // Race condition possible hai — do users ek hi slot same time pe book kar sakte hain.
-  // DB level pe check karo:
-  //   existing.startTime < newEndTime   (existing booking ne naye slot ka end time cross kiya)
-  //   AND existing.endTime > newStartTime (existing booking naye slot se pehle start nahi hui)
-  // = any kind of overlap
-  const conflict = await db.booking.findFirst({
-    where: {
-      interviewerId,           // same interviewer
-      status: "SCHEDULED",     // sirf active bookings
-      startTime: { lt: new Date(endTime) },   // existing start < new end (overlap condition 1)
-      endTime: { gt: new Date(startTime) },   // existing end > new start (overlap condition 2)
-    },
-  });
-  if (conflict)
-    throw new Error("This slot was just booked. Please pick another.");
+  // ── Step 5: Conflict Detection + DB Transaction ──────────────────────────
+  // Both conflict check AND booking creation happen inside ONE transaction
+  // to prevent race conditions where two users book the same slot simultaneously.
+  // Stream call is created BEFORE the transaction (Step 6) because if Stream fails,
+  // we don't want to start a DB transaction at all.
 
   // ── Step 6: Stream Video Call Creation ───────────────────────────────────
   // Booking confirm hone se PEHLE Stream call create karte hain
@@ -209,7 +198,6 @@ export const bookSlot = async ({ interviewerId, startTime, endTime }) => {
           // Screensharing: enabled for code sharing during technical interviews
           screensharing: {
             enabled: true,
-            // target_resolution: { width: 1920, height: 1080 }, // (commented — optional HD screenshare)
           },
 
           // Transcription: auto-start when first user joins
@@ -227,12 +215,25 @@ export const bookSlot = async ({ interviewerId, startTime, endTime }) => {
 
   // ── Step 7: Atomic DB Transaction ────────────────────────────────────────
   // db.$transaction() → sab operations ek unit ke taur par execute hoti hain.
+  // Conflict check bhi INSIDE transaction hai → race condition prevented.
   // Agar koi bhi step fail ho → sab rollback → no partial state.
-  // Without transaction:
-  //   - Booking create ho sakti hai lekin credits deduct nahi hote → free session exploit
-  //   - Credits deduct ho sakte hain lekin booking create nahi hoti → money lost
   try {
     const booking = await db.$transaction(async (tx) => {
+      // 0. Conflict check INSIDE transaction to prevent race conditions
+      //   existing.startTime < newEndTime   (existing booking ne naye slot ka end time cross kiya)
+      //   AND existing.endTime > newStartTime (existing booking naye slot se pehle start nahi hui)
+      // = any kind of overlap
+      const conflict = await tx.booking.findFirst({
+        where: {
+          interviewerId,           // same interviewer
+          status: "SCHEDULED",     // sirf active bookings
+          startTime: { lt: new Date(endTime) },   // existing start < new end (overlap condition 1)
+          endTime: { gt: new Date(startTime) },   // existing end > new start (overlap condition 2)
+        },
+      });
+      if (conflict)
+        throw new Error("This slot was just booked. Please pick another.");
+
       // 1. Booking row create karo
       const newBooking = await tx.booking.create({
         data: {

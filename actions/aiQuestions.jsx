@@ -89,8 +89,14 @@ Respond ONLY with a valid JSON array. No markdown, no backticks, no explanation.
   const clean = text.replace(/^```json|^```|```$/gm, "").trim();
 
   // Step 7: JSON parse karo — string → JavaScript array of objects
-  // Agar Gemini ne invalid JSON diya to yeh throw karega (error boundary upar handle karega)
-  const questions = JSON.parse(clean);
+  // Wrap in try-catch: Gemini kabhi kabhi invalid JSON return karta hai
+  let questions;
+  try {
+    questions = JSON.parse(clean);
+  } catch (parseErr) {
+    console.error("AI question parse error:", parseErr.message, "Raw:", clean.slice(0, 200));
+    throw new Error("Failed to parse AI response. Please try generating again.");
+  }
 
   // Return: array of { question, answer } objects
   return { questions };

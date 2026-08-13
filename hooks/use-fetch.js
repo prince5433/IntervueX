@@ -12,7 +12,7 @@ const useFetch = (cb) => {
   // Note: async callback ka latest response store hoga.
   const [data, setData] = useState(undefined);
   // Note: request in-progress state.
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(false);
   // Note: error object/message yahan track hota hai.
   const [error, setError] = useState(null);
 
